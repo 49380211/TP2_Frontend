@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
+if (!accessToken || !refreshToken) return Astro.redirect('/login');
+
+const { data: sessionData } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+if (!sessionData?.user) return Astro.redirect('/login');
+
+const { id } = Astro.params;
+const { data: pelicula } = await supabase
+  .from('peliculas')
+  .select('*')
+  .eq('id', id)
+  .eq('user_id', sessionData.user.id)
+  .single();
+
+if (!pelicula) return Astro.redirect('/catalog');
+
+const error = Astro.url.searchParams.get('error');
+const generos = ['Acción','Animación','Aventura','Ciencia Ficción','Comedia','Drama','Fantasy','Horror','Musical','Romance','Suspenso','Otro'];
+---
+
+<Layout title={`Editar — ${pelicula.titulo}`}>
+  <div class="form-wrapper container">
+    <div class="form-card animate-in">
+      <div class="form-header">
+        <h1>EDITAR PELÍCULA</h1>
+        <a href={`/movie/${pelicula.id}`} class="btn btn-ghost">← Volver</a>
+      </div>
+
+      {error && <div class="alert alert-error">{decodeURIComponent(error)}</div>}
+
+      <form method="POST" action="/api/movies/edit" class="movie-form">
+        <input type="hidden" name="id" value={pelicula.id} />
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="titulo">Título *</label>
+            <input type="text" id="titulo" name="titulo" required value={pelicula.titulo} />
+          </div>
+          <div class="form-group">
+            <label for="anio">Año</label>
+            <input type="number" id="anio" name="anio" min="1880" max="2030" value={pelicula.anio ?? ''} />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="director">Director</label>
+            <input type="text" id="director" name="director" value={pelicula.director ?? ''} />
+          </div>
+          <div class="form-group">
+            <label for="genero">Género</label>
+            <select id="genero" name="genero">
+              <option value="">Seleccionar género</option>
+              {generos.map(g => <option value={g} selected={pelicula.genero === g}>{g}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="estado">Estado *</label>
+            <select id="estado" name="estado" required>
+              <option value="pendiente" selected={pelicula.estado === 'pendiente'}>Pendiente</option>
+              <option value="vista"     selected={pelicula.estado === 'vista'}>Vista</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Puntuación</label>
+            <div class="stars" id="stars">
+              {[1,2,3,4,5].map(n => (
+                <span class="star" data-value={n} class:list={['star', { active: pelicula.puntuacion >= n }]}>★</span>
+              ))}
+            </div>
+            <input type="hidden" id="puntuacion" name="puntuacion" value={pelicula.puntuacion ?? 0} />
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="es_favorita" value="true" checked={pelicula.es_favorita} />
+            <span>Marcar como favorita ♥</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <a href={`/movie/${pelicula.id}`} class="btn btn-ghost">Cancelar</a>
+          <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+.form-wrapper { padding-top: 2.5rem; padding-bottom: 3rem; }
+.form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; max-width: 700px; margin: 0 auto; }
+.form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.form-header h1 { font-family: var(--font-display); font-size: 2rem; color: var(--accent); letter-spacing: 0.08em; }
+.movie-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.checkbox-group { flex-direction: row; }
+.checkbox-label { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-muted); }
+.checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem; }
+@media (max-width: 580px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+const stars = document.querySelectorAll('.star');
+const puntuacionInput = document.getElementById('puntuacion');
+let current = parseInt(puntuacionInput.value) || 0;
+
+function paint(n) { stars.forEach((s, i) => s.classList.toggle('active', i < n)); }
+paint(current);
+
+stars.forEach((star, i) => {
+  star.addEventListener('mouseenter', () => paint(i + 1));
+  star.addEventListener('mouseleave', () => paint(current));
+  star.addEventListener('click', () => {
+    current = current === i + 1 ? 0 : i + 1;
+    puntuacionInput.value = current;
+    paint(current);
+  });
+});
+</script>

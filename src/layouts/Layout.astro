@@ -1,0 +1,101 @@
+---
+import '../styles/global.css';
+import { supabase } from '../lib/supabase';
+
+const { title = 'CineVault' } = Astro.props;
+
+// Check auth
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
+
+let user = null;
+if (accessToken && refreshToken) {
+  const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  user = data?.user ?? null;
+}
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — CineVault</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-inner">
+      <a href="/" class="navbar-logo">CINE<span>VAULT</span></a>
+      <div class="navbar-actions">
+        {user ? (
+          <>
+            <a href="/catalog" class="btn btn-ghost">Mi Catálogo</a>
+            <a href="/add" class="btn btn-primary">+ Agregar</a>
+            <form method="POST" action="/api/auth/logout">
+              <button class="btn btn-ghost" type="submit">Salir</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <a href="/login" class="btn btn-ghost">Iniciar sesión</a>
+            <a href="/register" class="btn btn-primary">Registrarse</a>
+          </>
+        )}
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <span>CINEVAULT — Tu catálogo personal de cine</span>
+    </div>
+  </footer>
+</body>
+</html>
+
+<style>
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+}
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.navbar-logo {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  transition: color 0.2s;
+}
+.navbar-logo span { color: var(--accent); }
+.navbar-logo:hover { color: var(--accent); }
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 4rem;
+}
+</style>

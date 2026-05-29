@@ -1,0 +1,98 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
+if (!accessToken || !refreshToken) return Astro.redirect('/login');
+
+const { data: sessionData } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+if (!sessionData?.user) return Astro.redirect('/login');
+
+const { id } = Astro.params;
+const { data: pelicula } = await supabase
+  .from('peliculas')
+  .select('*')
+  .eq('id', id)
+  .eq('user_id', sessionData.user.id)
+  .single();
+
+if (!pelicula) return Astro.redirect('/catalog');
+---
+
+<Layout title={pelicula.titulo}>
+  <div class="detail-wrapper container">
+    <div class="detail-back animate-in">
+      <a href="/catalog" class="btn btn-ghost">← Volver al catálogo</a>
+    </div>
+
+    <div class="detail-layout animate-in">
+      <div class="detail-poster">
+        <div class="poster-placeholder">🎬</div>
+        {pelicula.es_favorita && <div class="fav-ribbon">♥ Favorita</div>}
+      </div>
+
+      <div class="detail-info">
+        <div class="detail-meta-row">
+          {pelicula.anio && <span class="detail-year">{pelicula.anio}</span>}
+          <span class={`badge badge-${pelicula.estado}`}>{pelicula.estado === 'vista' ? 'Vista' : 'Pendiente'}</span>
+          {pelicula.genero && <span class="detail-genre">{pelicula.genero}</span>}
+        </div>
+
+        <h1 class="detail-title">{pelicula.titulo}</h1>
+
+        {pelicula.director && (
+          <p class="detail-director">Dirigida por <strong>{pelicula.director}</strong></p>
+        )}
+
+        {pelicula.puntuacion > 0 && (
+          <div class="detail-rating">
+            <div class="stars-display">{'★'.repeat(pelicula.puntuacion)}{'☆'.repeat(5 - pelicula.puntuacion)}</div>
+            <span class="rating-num">{pelicula.puntuacion}/5</span>
+          </div>
+        )}
+
+        <p class="detail-date">
+          Agregada el {new Date(pelicula.creado_en).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+        </p>
+
+        <div class="detail-actions">
+          <a href={`/edit/${pelicula.id}`} class="btn btn-ghost">Editar</a>
+          <form method="POST" action="/api/movies/toggle-favorite">
+            <input type="hidden" name="id" value={pelicula.id} />
+            <input type="hidden" name="current" value={pelicula.es_favorita.toString()} />
+            <button type="submit" class={`btn ${pelicula.es_favorita ? 'btn-danger' : 'btn-ghost'}`}>
+              {pelicula.es_favorita ? '♥ Quitar favorita' : '♡ Favorita'}
+            </button>
+          </form>
+          <form method="POST" action="/api/movies/delete" onsubmit="return confirm('¿Eliminar esta película?')">
+            <input type="hidden" name="id" value={pelicula.id} />
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+.detail-wrapper { padding-top: 2.5rem; padding-bottom: 3rem; }
+.detail-back { margin-bottom: 2rem; }
+.detail-layout { display: grid; grid-template-columns: 280px 1fr; gap: 3rem; align-items: start; }
+.detail-poster { position: relative; border-radius: var(--radius-lg); overflow: hidden; aspect-ratio: 2/3; background: var(--bg-card); border: 1px solid var(--border); }
+.poster-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: var(--text-dim); }
+.fav-ribbon { position: absolute; bottom: 0; left: 0; right: 0; background: var(--favorite); color: white; text-align: center; padding: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+.detail-info { display: flex; flex-direction: column; gap: 1.25rem; }
+.detail-meta-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.detail-year { color: var(--text-muted); font-size: 0.9rem; }
+.detail-genre { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 999px; }
+.detail-title { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: 0.04em; line-height: 1; }
+.detail-director { color: var(--text-muted); }
+.detail-director strong { color: var(--text); }
+.detail-rating { display: flex; align-items: center; gap: 1rem; }
+.stars-display { color: var(--accent); font-size: 1.5rem; letter-spacing: 0.1em; }
+.rating-num { color: var(--text-muted); }
+.detail-date { color: var(--text-dim); font-size: 0.8rem; }
+.detail-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+@media (max-width: 700px) { .detail-layout { grid-template-columns: 1fr; } .detail-poster { max-width: 240px; margin: 0 auto; } }
+</style>

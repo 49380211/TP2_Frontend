@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
+
+if (accessToken && refreshToken) {
+  const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  if (data?.user) return Astro.redirect('/catalog');
+}
+---
+
+<Layout title="Inicio">
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+    </div>
+    <div class="container hero-content animate-in">
+      <div class="hero-eyebrow">Tu colección personal</div>
+      <h1 class="hero-title">CADA PELÍCULA<br/><span>TIENE SU LUGAR</span></h1>
+      <p class="hero-sub">
+        Organizá, puntuá y descubrí tu cine. Un catálogo personal donde cada film que viste —o querés ver— vive en un solo lugar.
+      </p>
+      <div class="hero-cta">
+        <a href="/register" class="btn btn-primary btn-lg">Crear mi catálogo</a>
+        <a href="/login" class="btn btn-ghost btn-lg">Ya tengo cuenta</a>
+      </div>
+    </div>
+
+    <div class="features container">
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3>Tu colección</h3>
+        <p>Agregá películas con póster, director, género y año. Todo lo que necesitás recordar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⭐</div>
+        <h3>Puntuá y reseñá</h3>
+        <p>Dale tu rating y dejá una reseña personal. Tu opinión, no la de los demás.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗂️</div>
+        <h3>Organizá por estado</h3>
+        <p>Vista, Pendiente o Favorita. Filtrá y buscá en segundos.</p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 4rem;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232,197,71,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,197,71,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+}
+.hero-content {
+  position: relative;
+  padding: 6rem 1.5rem 3rem;
+  max-width: 700px;
+}
+.hero-eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+.hero-title span { color: var(--accent); }
+.hero-sub {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+}
+.hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-lg { padding: 0.85rem 2rem; font-size: 1rem; }
+
+.features {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-4px);
+}
+.feature-icon { font-size: 2rem; margin-bottom: 1rem; }
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.feature-card p { color: var(--text-muted); font-size: 0.95rem; }
+</style>
