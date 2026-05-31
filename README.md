@@ -1,5 +1,4 @@
-https://vercel.com/49380211-1280s-projects/tp-2-frontend/3PR5fLdWNrP1amncyKfr3LufY5ra
-
+https://tp-2-frontend-h2ke931m1-49380211-1280s-projects.vercel.app/
 CineVault: Catálogo de Películas
 Aplicación web que gestiona tu catálogo de películas: podés agregar, editar, puntuar y filtrar películas, con login de usuarios y datos guardados en la nube (En Supabase).
 
