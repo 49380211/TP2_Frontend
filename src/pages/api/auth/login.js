@@ -18,19 +18,10 @@ export const POST = async ({ request, cookies, redirect }) => {
   const { access_token, refresh_token } = data.session;
 
   cookies.set('sb-access-token', access_token, {
-    path: '/',
-    httpOnly: true,
-    secure: import.meta.env.PROD,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7,
+    path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7,
   });
-
   cookies.set('sb-refresh-token', refresh_token, {
-    path: '/',
-    httpOnly: true,
-    secure: import.meta.env.PROD,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30,
+    path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30,
   });
 
   return redirect('/catalog');

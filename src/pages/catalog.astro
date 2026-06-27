@@ -6,86 +6,40 @@ const accessToken = Astro.cookies.get('sb-access-token')?.value;
 const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
 if (!accessToken || !refreshToken) return Astro.redirect('/login');
 
-const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-  access_token: accessToken,
-  refresh_token: refreshToken,
-});
+const { data: sessionData, error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
 if (sessionError || !sessionData?.user) return Astro.redirect('/login');
 
 const user = sessionData.user;
+const { data: peliculas } = await supabase.from('peliculas').select('*').eq('user_id', user.id).order('creado_en', { ascending: false });
 
-const { data: peliculas } = await supabase
-  .from('peliculas')
-  .select('*')
-  .eq('user_id', user.id)
-  .order('creado_en', { ascending: false });
-
-const total      = peliculas?.length ?? 0;
-const vistas     = peliculas?.filter(p => p.estado === 'vista').length ?? 0;
+const total = peliculas?.length ?? 0;
+const vistas = peliculas?.filter(p => p.estado === 'vista').length ?? 0;
 const pendientes = peliculas?.filter(p => p.estado === 'pendiente').length ?? 0;
-const favoritas  = peliculas?.filter(p => p.es_favorita).length ?? 0;
-
+const favoritas = peliculas?.filter(p => p.es_favorita).length ?? 0;
 const generos = ['Acción','Animación','Aventura','Ciencia Ficción','Comedia','Drama','Fantasy','Horror','Musical','Romance','Suspenso','Otro'];
 ---
-
 <Layout title="Mi Catálogo">
   <div class="catalog-wrapper container">
-
     <div class="catalog-header animate-in">
-      <div>
-        <h1 class="catalog-title">MI CATÁLOGO</h1>
-        <p class="catalog-email">{user.email}</p>
-      </div>
+      <div><h1 class="catalog-title">MI CATÁLOGO</h1><p class="catalog-email">{user.email}</p></div>
       <a href="/add" class="btn btn-primary">+ Agregar película</a>
     </div>
-
     <div class="stats-row animate-in">
-      <div class="stat-card">
-        <span class="stat-num">{total}</span>
-        <span class="stat-label">Total</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-num" style="color:var(--watched)">{vistas}</span>
-        <span class="stat-label">Vistas</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-num" style="color:var(--pending)">{pendientes}</span>
-        <span class="stat-label">Pendientes</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-num" style="color:var(--favorite)">{favoritas}</span>
-        <span class="stat-label">Favoritas</span>
-      </div>
+      <div class="stat-card"><span class="stat-num">{total}</span><span class="stat-label">Total</span></div>
+      <div class="stat-card"><span class="stat-num" style="color:var(--watched)">{vistas}</span><span class="stat-label">Vistas</span></div>
+      <div class="stat-card"><span class="stat-num" style="color:var(--pending)">{pendientes}</span><span class="stat-label">Pendientes</span></div>
+      <div class="stat-card"><span class="stat-num" style="color:var(--favorite)">{favoritas}</span><span class="stat-label">Favoritas</span></div>
     </div>
-
     <div class="filters animate-in">
       <input type="text" id="search-input" placeholder="Buscar por título o director..." class="search-input" />
-      <select id="filter-estado">
-        <option value="">Todos los estados</option>
-        <option value="vista">Vista</option>
-        <option value="pendiente">Pendiente</option>
-      </select>
-      <select id="filter-genero">
-        <option value="">Todos los géneros</option>
-        {generos.map(g => <option value={g}>{g}</option>)}
-      </select>
-      <select id="filter-favorita">
-        <option value="">Todas</option>
-        <option value="true">Solo favoritas</option>
-      </select>
+      <select id="filter-estado"><option value="">Todos los estados</option><option value="vista">Vista</option><option value="pendiente">Pendiente</option></select>
+      <select id="filter-genero"><option value="">Todos los géneros</option>{generos.map(g => <option value={g}>{g}</option>)}</select>
+      <select id="filter-favorita"><option value="">Todas</option><option value="true">Solo favoritas</option></select>
     </div>
-
     {peliculas && peliculas.length > 0 ? (
       <div class="movies-grid" id="movies-grid">
         {peliculas.map(p => (
-          <article
-            class="movie-card"
-            data-titulo={p.titulo.toLowerCase()}
-            data-director={(p.director ?? '').toLowerCase()}
-            data-estado={p.estado}
-            data-genero={p.genero ?? ''}
-            data-favorita={p.es_favorita ? 'true' : 'false'}
-          >
+          <article class="movie-card" data-titulo={p.titulo.toLowerCase()} data-director={(p.director ?? '').toLowerCase()} data-estado={p.estado} data-genero={p.genero ?? ''} data-favorita={p.es_favorita ? 'true' : 'false'}>
             <div class="movie-poster">
               <div class="poster-placeholder">🎬</div>
               <div class="movie-overlay">
@@ -101,12 +55,8 @@ const generos = ['Acción','Animación','Aventura','Ciencia Ficción','Comedia',
               </div>
               <h3 class="movie-title">{p.titulo}</h3>
               {p.director && <p class="movie-director">{p.director}</p>}
-              {p.genero  && <p class="movie-genre">{p.genero}</p>}
-              {p.puntuacion > 0 && (
-                <div class="movie-rating">
-                  {'★'.repeat(p.puntuacion)}{'☆'.repeat(5 - p.puntuacion)}
-                </div>
-              )}
+              {p.genero && <p class="movie-genre">{p.genero}</p>}
+              {p.puntuacion > 0 && <div class="movie-rating">{'★'.repeat(p.puntuacion)}{'☆'.repeat(5 - p.puntuacion)}</div>}
             </div>
           </article>
         ))}
@@ -119,40 +69,31 @@ const generos = ['Acción','Animación','Aventura','Ciencia Ficción','Comedia',
         <a href="/add" class="btn btn-primary">Agregar película</a>
       </div>
     )}
-
-    <div class="no-results" id="no-results" style="display:none">
-      <p>No se encontraron películas con esos filtros.</p>
-    </div>
+    <div class="no-results" id="no-results" style="display:none"><p>No se encontraron películas con esos filtros.</p></div>
   </div>
 </Layout>
-
 <style>
 .catalog-wrapper { padding-top: 2.5rem; padding-bottom: 3rem; }
 .catalog-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
 .catalog-title { font-family: var(--font-display); font-size: 3rem; letter-spacing: 0.05em; color: var(--accent); line-height: 1; }
 .catalog-email { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
 .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.2rem; }
-.stat-num { font-family: var(--font-display); font-size: 2.5rem; line-height: 1; color: var(--text); }
+.stat-num { font-family: var(--font-display); font-size: 2.5rem; line-height: 1; }
 .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
-
 .filters { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; }
 .search-input { flex: 1; min-width: 200px; }
 .filters select { min-width: 160px; }
-
 .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
-.movie-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; }
-.movie-card:hover { border-color: var(--border-hover); transform: translateY(-4px); box-shadow: var(--shadow); }
+.movie-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+.movie-card:hover { border-color: var(--border-hover); transform: translateY(-4px); }
 .movie-card.hidden { display: none; }
-
 .movie-poster { position: relative; aspect-ratio: 2/3; background: var(--bg); overflow: hidden; }
 .poster-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--text-dim); }
 .movie-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; opacity: 0; transition: opacity 0.2s; }
 .movie-card:hover .movie-overlay { opacity: 1; }
 .btn-sm { padding: 0.45rem 1rem; font-size: 0.8rem; }
 .fav-badge { position: absolute; top: 0.5rem; right: 0.5rem; background: var(--favorite); color: white; border-radius: 999px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
-
 .movie-info { padding: 1rem; }
 .movie-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
 .movie-year { font-size: 0.75rem; color: var(--text-muted); }
@@ -160,49 +101,33 @@ const generos = ['Acción','Animación','Aventura','Ciencia Ficción','Comedia',
 .movie-director { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem; }
 .movie-genre { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
 .movie-rating { color: var(--accent); font-size: 0.85rem; margin-top: 0.4rem; letter-spacing: 0.05em; }
-
 .empty-state { text-align: center; padding: 5rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 .empty-icon { font-size: 4rem; }
 .empty-state h2 { font-family: var(--font-display); font-size: 2rem; color: var(--text-muted); }
 .empty-state p { color: var(--text-dim); }
 .no-results { text-align: center; padding: 3rem; color: var(--text-muted); }
-
-@media (max-width: 640px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .catalog-title { font-size: 2rem; }
-}
+@media (max-width: 640px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .catalog-title { font-size: 2rem; } }
 </style>
-
 <script>
-const searchInput  = document.getElementById('search-input');
+const searchInput = document.getElementById('search-input');
 const filterEstado = document.getElementById('filter-estado');
 const filterGenero = document.getElementById('filter-genero');
-const filterFav    = document.getElementById('filter-favorita');
-const grid         = document.getElementById('movies-grid');
-const noResults    = document.getElementById('no-results');
-
+const filterFav = document.getElementById('filter-favorita');
+const grid = document.getElementById('movies-grid');
+const noResults = document.getElementById('no-results');
 function applyFilters() {
-  const q      = searchInput.value.toLowerCase();
-  const estado = filterEstado.value;
-  const genero = filterGenero.value;
-  const fav    = filterFav.value;
-  let visible  = 0;
-
+  const q = searchInput.value.toLowerCase();
+  const estado = filterEstado.value, genero = filterGenero.value, fav = filterFav.value;
+  let visible = 0;
   document.querySelectorAll('.movie-card').forEach(card => {
-    const ok =
-      (card.dataset.titulo.includes(q) || card.dataset.director.includes(q)) &&
-      (!estado || card.dataset.estado === estado) &&
-      (!genero || card.dataset.genero === genero) &&
-      (!fav    || card.dataset.favorita === fav);
-
+    const ok = (card.dataset.titulo.includes(q) || card.dataset.director.includes(q)) &&
+      (!estado || card.dataset.estado === estado) && (!genero || card.dataset.genero === genero) && (!fav || card.dataset.favorita === fav);
     card.classList.toggle('hidden', !ok);
     if (ok) visible++;
   });
-
   if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
   if (grid) grid.style.display = visible === 0 ? 'none' : 'grid';
 }
-
 searchInput?.addEventListener('input', applyFilters);
 filterEstado?.addEventListener('change', applyFilters);
 filterGenero?.addEventListener('change', applyFilters);

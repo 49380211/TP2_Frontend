@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 
 const { title = 'CineVault' } = Astro.props;
 
-// Check auth
 const accessToken = Astro.cookies.get('sb-access-token')?.value;
 const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
 
@@ -59,43 +58,11 @@ if (accessToken && refreshToken) {
 </html>
 
 <style>
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10, 10, 15, 0.85);
-  backdrop-filter: blur(12px);
-}
-.navbar-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-.navbar-logo {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  letter-spacing: 0.1em;
-  color: var(--text);
-  transition: color 0.2s;
-}
+.navbar { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(12px); }
+.navbar-inner { display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; padding-bottom: 1rem; }
+.navbar-logo { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 0.1em; color: var(--text); transition: color 0.2s; }
 .navbar-logo span { color: var(--accent); }
 .navbar-logo:hover { color: var(--accent); }
-.navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.footer {
-  border-top: 1px solid var(--border);
-  padding: 2rem 0;
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-align: center;
-  margin-top: 4rem;
-}
+.navbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+.footer { border-top: 1px solid var(--border); padding: 2rem 0; color: var(--text-dim); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; margin-top: 4rem; }
 </style>

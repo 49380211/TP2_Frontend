@@ -9,16 +9,10 @@ export const POST = async ({ request, cookies, redirect }) => {
   if (!sessionData?.user) return redirect('/login');
 
   const formData = await request.formData();
-  const id       = formData.get('id')?.toString();
-  const current  = formData.get('current')?.toString() === 'true';
-
+  const id = formData.get('id')?.toString();
+  const current = formData.get('current')?.toString() === 'true';
   if (!id) return redirect('/catalog');
 
-  await supabase
-    .from('peliculas')
-    .update({ es_favorita: !current })
-    .eq('id', id)
-    .eq('user_id', sessionData.user.id);
-
+  await supabase.from('peliculas').update({ es_favorita: !current }).eq('id', id).eq('user_id', sessionData.user.id);
   return redirect(`/movie/${id}`);
 };
